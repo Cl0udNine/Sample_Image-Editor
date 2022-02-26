@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Image Editor</title>
+
+    <!-- jQuery 3.6.0-->
+    <script src="js/jquery-3.6.0.slim.min.js"></script>
+
+    <!--Bootstrap 4.6.1-->
+    <link rel="stylesheet" href="css/bootstrap-4.6.1-dist/css/bootstrap.min.css">
+    <script src="js/bootstrap-4.6.1-dist/js/bootstrap.bundle.min.js"></script>
+
+    <!--Font-awesome 6-->
+    <link rel="stylesheet" href="css/font-awesome-6.0.0/css/all.min.css">
+
+    <!--Fabric Canvas Lib-->
+    <script src="js/canvas/fabric.min.js"></script>
+
+    <style>
+        .btn {
+            margin: 5px 10px;
+            padding: 10px 15px;
+        }
+    </style>
+
+</head>
+
+<body>
+    <div class="container-fluid p-5">
+        <!--Canvas-->
+        <div class="row" style="border: 1px solid black">
+            <div class="col" style="max-height: 500px; overflow: auto;">
+                <div class="d-flex flex-wrap justify-content-center align-content-center">
+                    <canvas id="canvas"></canvas>
+                </div>
+            </div>
+        </div>
+        <!--Buttons-->
+        <div class="row text-center">
+            <div class="col">
+                <hr>
+                <button type="button" class="btn btn-primary" data-toggle="tooltip" data-placement="bottom" title="Add Text" onclick="add_text()"><i class="fa-solid fa-font"></i></button>
+
+                <button type="button" class="btn btn-primary" data-toggle="tooltip" data-placement="bottom" title="Add Image" onclick="add_Image('https://www.gstatic.com/webp/gallery/4.jpg')"><i class="fa-solid fa-image"></i></button>
+
+                <button type="button" class="btn btn-secondary" data-toggle="tooltip" data-placement="bottom" title="Black Area" onclick="add_black_rect()"><i class="fa-solid fa-square text-dark"></i></button>
+
+                <button type="button" class="btn btn-secondary" data-toggle="tooltip" data-placement="bottom" title="White Area" onclick="add_white_rect()"><i class="fa-solid fa-square"></i></button>
+
+                <button type="button" class="btn btn-success" data-toggle="tooltip" data-placement="bottom" title="Send to Back" onclick="sendSelectedObjectBack()"><i class="fa-solid fa-chevron-down"></i></button>
+
+                <button type="button" class="btn btn-success" data-toggle="tooltip" data-placement="bottom" title="Send to Front" onclick="sendSelectedObjectFront()"><i class="fa-solid fa-chevron-up"></i></button>
+
+                <button type="button" class="btn btn-success" data-toggle="tooltip" data-placement="bottom" title="Select All" onclick="selectAllObjects()"><i class="fa-solid fa-arrow-pointer"></i></button>
+
+                <button type="button" class="btn btn-success" data-toggle="tooltip" data-placement="bottom" title="Group" onclick="groupObjects()"><i class="fa-solid fa-object-group"></i></button>
+
+                <button type="button" class="btn btn-success" data-toggle="tooltip" data-placement="bottom" title="Ungroup" onclick="ungroupObjects()"><i class="fa-solid fa-object-ungroup"></i></button>
+
+                <button type="button" class="btn btn-secondary" data-toggle="tooltip" data-placement="bottom" title="Delete Selected" onclick="deleteActiveCanvasObj();"><i class="fa fa-trash" aria-hidden="true"></i></button>
+
+                <button type="button" class="btn btn-secondary" data-toggle="tooltip" data-placement="bottom" title="Reset All" onclick="reset();"><i class="fa fa-refresh" aria-hidden="true"></i></button>
+
+                <button type="button" class="btn btn-warning" data-toggle="tooltip" data-placement="bottom" title="Download Image" onclick="saveImage();"><i class="fa-solid fa-download"></i></button>
+
+                <button type="button" class="btn btn-warning" data-toggle="tooltip" data-placement="bottom" title="Download Json" onclick="saveJson();"><i class="fa-solid fa-file-arrow-down"></i></button>
+
+                <button type="button" class="btn btn-warning" data-toggle="tooltip" data-placement="bottom" title="Load Json" onclick="load();"><i class="fa-solid fa-file-arrow-up"></i></button>
+            </div>
+        </div>
+    </div>
+
+    <!--Add fabric text and allow drag and drop pictures-->
+    <script type="text/javascript">
+        //Global variables
+        const StartX = 10;
+        const StartY = 10;
+        const RectWidth = 120;
+        const RectHeight = 100;
+        const BgImgURL = 'data/sample-image.jpg';
+        const JsonFilePath = 'data/json_str.txt';
+        const JsonFilename = 'json_str.txt';
+        const ImageFilename = 'NewImage.jpg';
+
+        var canvas;
+        var canvasWidth;
+        var canvasHeight;
+
+        //Initialize canvas
+        let bgImg = document.createElement('img');
+        bgImg.id = 'imgId';
+        bgImg.src = BgImgURL;
+        bgImg.onload = function() {
+            //Get the background image width and height
+            let realWidth = bgImg.naturalWidth;
+            let realHeight = bgImg.naturalHeight;
+            console.log("Background image | original width=" + realWidth + ", " + "original height=" + realHeight);
+
+            //Set canvas width and height based on bg image
+            canvasWidth = realWidth;
+            canvasHeight = realHeight;
+
+            //Initialize (fabric) canvas
+            canvas = new fabric.Canvas("canvas", {
+                backgroundColor: 'gray',
+                width: canvasWidth,
+                height: canvasHeight,
+            });
+
+            //Initialize (fabric) canvas background
+            canvas.setBackgroundImage(BgImgURL, canvas.renderAll.bind(canvas), {
+                opacity: 1,
+                angle: 0,
+                left: 0,
+                top: 0,
+                originX: 'left',
+                originY: 'top',
+            });
+        }
+
+
+        //Add text to the canvas
+        function add_text() {
+            var text = new fabric.IText('Key In Text Here', {
+                left: StartX,
+                top: StartY,
+                fill: 'white'
+            });
+
+            canvas.add(text);
+            canvas.setActiveObject(text);
+        };
+
+
+        //Add image to the canvas
+        function add_Image(imageURL) {
+            //var canvas = new fabric.Canvas('canvas');
+            fabric.Image.fromURL(imageURL, function(myImg) {
+                var img1 = myImg.set({
+                    left: 0,
+                    top: 0,
+                    scaleX: 100 / myImg.width,
+                    scaleY: 100 / myImg.height
+                });
+                canvas.add(img1);
+                canvas.renderAll();
+            });
+        }
+
+
+        //Add white rectangle to the canvas
+        function add_white_rect() {
+            // Initiate a Rect instance
+            var rectangle = new fabric.Rect({
+                left: StartX,
+                top: StartY,
+                width: RectWidth,
+                height: RectHeight,
+                fill: 'white',
+                stroke: 'white',
+                strokeWidth: 1
+            });
+
+            canvas.add(rectangle);
+            canvas.setActiveObject(rectangle);
+        };
+
+
+        //Add black rectangle to the canvas
+        function add_black_rect() {
+            // Initiate a Rect instance
+            var rectangle = new fabric.Rect({
+                left: StartX,
+                top: StartY,
+                width: RectWidth,
+                height: RectHeight,
+                fill: 'black',
+                stroke: 'black',
+                strokeWidth: 1
+            });
+            canvas.add(rectangle);
+            canvas.setActiveObject(rectangle);
+        };
+
+
+        //[Event] Delete selected object on canvas (via delete key)
+        $('html').keydown(function(e) {
+            if (e.keyCode == 46) {
+                console.log('Delete key pressed!');
+                deleteActiveCanvasObj();
+            }
+        });
+
+
+        //Delete selected object on canvas
+        function deleteActiveCanvasObj() {
+            canvas.getActiveObjects().forEach((obj) => {
+                canvas.remove(obj)
+            });
+            canvas.discardActiveObject().renderAll()
+        }
+
+
+        //Send object to the back
+        var sendSelectedObjectBack = function() {
+            selectedObject = canvas.getActiveObject();
+            if (selectedObject)
+                canvas.sendToBack(selectedObject);
+            canvas.renderAll();
+        }
+
+
+        //Send object to the front
+        var sendSelectedObjectFront = function() {
+            selectedObject = canvas.getActiveObject();
+            if (selectedObject)
+                canvas.bringToFront(selectedObject);
+            canvas.renderAll();
+        }
+
+        //Highlight all objects
+        var selectAllObjects = function() {
+
+            canvas.discardActiveObject();
+            var sel = new fabric.ActiveSelection(canvas.getObjects(), {
+                canvas: canvas,
+            });
+            canvas.setActiveObject(sel);
+            canvas.requestRenderAll();
+        }
+
+        //Group selected objects
+        var groupObjects = function() {
+            if (!canvas.getActiveObject()) {
+                return;
+            }
+            if (canvas.getActiveObject().type !== 'activeSelection') {
+                return;
+            }
+            canvas.getActiveObject().toGroup();
+            canvas.requestRenderAll();
+        }
+
+        //Ungroup selected objects
+        var ungroupObjects = function() {
+            if (!canvas.getActiveObject()) {
+                return;
+            }
+            if (canvas.getActiveObject().type !== 'group') {
+                return;
+            }
+            canvas.getActiveObject().toActiveSelection();
+            canvas.requestRenderAll();
+        }
+
+        //Function to reset (Remove all objects)
+        function reset() {
+            //location.reload();
+            var canvasObjects = canvas.getObjects();
+            console.log('No of objects: ' + canvasObjects.length);
+            for (i = 0; i < canvasObjects.length; i++) {
+                canvas.remove(canvasObjects[i]);
+                console.log('Remove object: ' + i);
+            }
+        }
+
+        //Function to download json (placement of objects) 
+        function saveJson() {
+            var jsonObj = canvas.toJSON();
+            var json_str = JSON.stringify(jsonObj);
+            downloadFile(json_str, JsonFilename, 'text/plain', false);
+        }
+
+        //Function to download image
+        function saveImage() {
+            downloadFile(canvas.toDataURL(), ImageFilename, 'image/jpg', true);
+        }
+
+        //Download file (path fix by browser dl path)
+        function downloadFile(content, fileName, contentType, isCanvasImage) {
+            var a = document.createElement("a");
+
+            if (isCanvasImage == false) {
+                var file = new Blob([content], {
+                    type: contentType
+                });
+                a.href = URL.createObjectURL(file);
+            } else {
+                a.href = content;
+            }
+
+            a.download = fileName;
+            a.click();
+        }
+
+        //Function to load saved json (placement of objects)
+        function load() {
+            var json_str = readTextFile(JsonFilePath);
+            var jsonObj = JSON.parse(json_str);
+            canvas.loadFromJSON(jsonObj, canvas.renderAll.bind(canvas));
+        }
+
+        //Read from filepath and retun string
+        function readTextFile(file) {
+            var rawFile = new XMLHttpRequest();
+            var result = null;
+            rawFile.open("GET", file, false);
+            rawFile.onreadystatechange = function() {
+                if (rawFile.readyState === 4) {
+                    if (rawFile.status === 200 || rawFile.status == 0) {
+                        var allText = rawFile.responseText;
+                        result = allText;
+                    }
+                }
+            }
+            rawFile.send(null);
+            return result;
+        }
+
+        //Bootstrap initialize all tooltips on a page
+        $(function() {
+            $('[data-toggle="tooltip"]').tooltip({
+                trigger: 'hover'
+            })
+        })
+    </script>
+
+</body>
+
+</html>
