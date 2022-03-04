@@ -4,7 +4,7 @@ Result:
 
 Dependencies:
 -------------
-> jQuery 3.6.0</br>Bootstrap 4.6.1</br>Font Awesome 6</br>Fabric Canvas Lib
+> jQuery 3.6.0</br>Bootstrap 4.6.1</br>Font Awesome 6</br>Fabric Canvas Lib 3.4.0
 
 Note:
 -----
